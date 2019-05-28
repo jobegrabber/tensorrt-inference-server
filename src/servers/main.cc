@@ -33,6 +33,11 @@
 #include <csignal>
 #include <iostream>
 #include <mutex>
+
+#ifdef TRTIS_ENABLE_ASAN
+#include <sanitizer/lsan_interface.h>
+#endif  // TRTIS_ENABLE_ASAN
+
 #include "src/core/logging.h"
 #include "src/core/trtserver.h"
 #include "src/servers/common.h"
@@ -782,9 +787,15 @@ main(int argc, char** argv)
   StopEndpoints();
 
   // FIXME. TF backend aborts if we attempt cleanup...
-  std::shared_ptr<TRTSERVER_Server>* keep_alive =
-      new std::shared_ptr<TRTSERVER_Server>(server);
-  if (keep_alive == nullptr) {
-    return 1;
-  }
+  //  std::shared_ptr<TRTSERVER_Server>* keep_alive =
+  //      new std::shared_ptr<TRTSERVER_Server>(server);
+  //  if (keep_alive == nullptr) {
+  //    return 1;
+  //  }
+
+#ifdef TRTIS_ENABLE_ASAN
+  // Can invoke ASAN before exit though this is typically not very
+  // useful since there are many objects that are not yet destructed.
+  //  __lsan_do_leak_check();
+#endif  // TRTIS_ENABLE_ASAN
 }
