@@ -275,11 +275,6 @@ GCSFileSystem::ParsePath(
         RequestStatusCode::INTERNAL, "No bucket name found in path: " + path);
   }
 
-  if (object->empty()) {
-    return Status(
-        RequestStatusCode::INTERNAL, "No file name found in path: " + path);
-  }
-
   return Status::Success;
 }
 
@@ -334,12 +329,17 @@ GCSFileSystem::IsDirectory(const std::string& path, bool* is_dir)
   }
 
 
-  // Check if whether it has children. If at least one child, it is a directory
-  for (auto&& object_metadata :
-       client_->ListObjects(bucket, gcs::Prefix(AppendSlash(object_path)))) {
-    if (object_metadata) {
-      *is_dir = true;
-      break;
+  // If path is the bucket root, it is a directory
+  if (object_path.empty()) {
+    *is_dir = true;
+  } else {
+    // Check if whether it has children. If at least one child, it is a directory
+    for (auto&& object_metadata :
+         client_->ListObjects(bucket, gcs::Prefix(AppendSlash(object_path)))) {
+      if (object_metadata) {
+        *is_dir = true;
+        break;
+      }
     }
   }
   return Status::Success;
